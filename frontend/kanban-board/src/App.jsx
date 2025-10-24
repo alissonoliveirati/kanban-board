@@ -1,10 +1,16 @@
-import { useState } from "react";
 import "./App.css";
+import React from "react";
+import Board from "./components/Board";
 
 function App() {
-  const [count, setCount] = useState(0);
-
-  return <></>;
+  return (
+    <div className="App">
+      <main>
+        <h1>Kanban Board</h1>
+        <Board />
+      </main>
+    </div>
+  );
 }
 
 export default App;
