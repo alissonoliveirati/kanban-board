@@ -153,3 +153,26 @@ main {
   width: auto; /* Reseta o width de 100% */
   cursor: pointer;
 }
+
+.group-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0 0.5rem;
+  margin-top: 0; /* Ajuste para alinhar com o input */
+  margin-bottom: 0.5rem; /* Ajuste */
+  cursor: pointer; /* Indica que é clicável */
+  min-height: 27px; /* Mesmo tamanho do input */
+}
+
+.group-title-input {
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0 0.5rem;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  border: 1px solid #007bff; /* Destaca que está editando */
+  border-radius: 4px;
+  width: 90%; /* Ajuste para caber no padding */
+  box-sizing: border-box;
+}

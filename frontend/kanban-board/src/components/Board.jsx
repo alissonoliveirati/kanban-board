@@ -17,6 +17,26 @@ function Board() {
     groupToAddTo: null,
   });
 
+  const handleUpdateGroupTitle = (groupId, newTitle) => {
+    if (!newTitle) return;
+
+    setBoardData((prevData) => {
+      const group = prevData.groups[groupId];
+      const updatedGroup = {
+        ...group,
+        title: newTitle,
+      };
+
+      return {
+        ...prevData,
+        groups: {
+          ...prevData.groups,
+          [groupId]: updatedGroup,
+        },
+      };
+    });
+  };
+
   // Função para configurar o sensor de arrastar e soltar
   const sensors = useSensors(
     useSensor(PointerSensor)
@@ -183,6 +203,7 @@ function Board() {
               activities={activities}
               onEditActivity={handleOpenEditModal}
               onNewCardClick={() => handleOpenCreateModal(group.id)}
+              onUpdateGroupTitle={handleUpdateGroupTitle}
             />
           );
         })}
