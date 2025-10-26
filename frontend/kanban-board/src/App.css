@@ -130,3 +130,22 @@ main {
   background-color: #f1f1f1;
   color: #333;
 }
+
+.modal-completed-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Faz o label do checkbox ser clicável */
+.modal-completed-check label {
+  font-weight: normal;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.modal-completed-check input[type="checkbox"] {
+  width: auto; /* Reseta o width de 100% */
+  cursor: pointer;
+}

@@ -1,6 +1,6 @@
 import React from "react";
 
-function ActivityCard({ activity }) {
+function ActivityCard({ activity, onClick }) {
     const isCompleted = activity.isCompleted;
     const isOverdue = new Date(activity.dueDate) < new Date() && !isCompleted;
 
@@ -12,7 +12,7 @@ function ActivityCard({ activity }) {
     }
 
     return (
-        <div className={cardClass}>
+        <div className={cardClass} onClick={onClick}>
             <p>{activity.description}</p>
             {activity.dueDate && (
                 <div className="activity-date">

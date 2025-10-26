@@ -11,61 +11,96 @@ function Board() {
   // Função para criar o estado do modal de atividade
   const [modalState, setModalState] = useState({
     isOpen: false,
+    mode: "create",
+    activityData: null,
     groupToAddTo: null,
   });
 
   // Função para abrir o modal de atividade
-  const handleOpenModal = (groupId) => {
-    setModalState({ isOpen: true, groupToAddTo: groupId });
+  const handleOpenCreateModal = (groupId) => {
+    setModalState({ 
+      isOpen: true,
+      mode: "create",
+      activityData: null,
+      groupToAddTo: groupId 
+    });
+  };
+
+  // Função para editar uma atividade existente
+  const handleOpenEditModal = (activity) => {
+    setModalState({ 
+      isOpen: true,
+      mode: "edit",
+      activityData: activity,
+      groupToAddTo: null
+    });
   };
 
   // Função para fechar o modal de atividade
   const handleCloseModal = () => {
-    setModalState({ isOpen: false, groupToAddTo: null });
+    setModalState({ 
+      isOpen: false, 
+      mode: "create", 
+      activityData: null,
+      groupToAddTo: null 
+    });
   };
 
   // Função para adicionar uma nova atividade ao grupo
-  const handleAddActivity = (activityData) => {
-    const newActivityId = `activity-${Date.now()}`;
-    const groupId = modalState.groupToAddTo;
+  const handleSaveOrUpdateActivity = (activityData) => {
+    
+    if (modalState.mode === "create") {
+      const newActivityId = `activity-${Date.now()}`;
+      const groupId = modalState.groupToAddTo;
 
-    // Cria a nova atividade
-    const newActivity = {
-      id: newActivityId,
-      description: activityData.description,
-      dueDate: activityData.dueDate || null,
-      isCompleted: false,
-    };
-
-    // Atualiza o estado do board com a nova atividade
-    setBoardData((prevData) => {
-      // Adiciona a nova atividade ao objeto de atividades
-      const newActivities = {
-        ...prevData.activities,
-        [newActivityId]: newActivity,
+      // Cria a nova atividade
+      const newActivity = {
+        ...activityData,
+        id: newActivityId,
+        isCompleted: activityData.isCompleted || false,
       };
 
-      // Adiciona o ID da nova atividade ao grupo correspondente
-      const group = prevData.groups[groupId];
-      const newActivityIds = [...group.activityIds, newActivityId];
-      const newGroup = {
-        ...group,
-        activityIds: newActivityIds,
-      };
+      // Atualiza o estado do board com a nova atividade
+      setBoardData((prevData) => {
+        // Adiciona a nova atividade ao objeto de atividades
+        const newActivities = {
+          ...prevData.activities,
+          [newActivityId]: newActivity,
+        };
 
-      const newGroups = {
-        ...prevData.groups,
-        [groupId]: newGroup,
-      };
+        // Adiciona o ID da nova atividade ao grupo correspondente
+        const group = prevData.groups[groupId];
+        const newActivityIds = [...group.activityIds, newActivityId];
+        const newGroup = {
+          ...group,
+          activityIds: newActivityIds,
+        };
 
-      // Retorna o novo estado do board
-      return {
-        ...prevData,
-        activities: newActivities,
-        groups: newGroups,
-      };
-    });
+        const newGroups = {
+          ...prevData.groups,
+          [groupId]: newGroup,
+        };
 
+        // Retorna o novo estado do board
+        return {
+          ...prevData,
+          activities: newActivities,
+          groups: newGroups,
+        };
+      });
+    } else if (modalState.mode === "edit") {
+      setBoardData(prevData => {
+        const activityId = activityData.id;
+        const newActivities = {
+          ...prevData.activities,
+          [activityId]: activityData,
+        };
+        return {
+          ...prevData,
+          activities: newActivities,
+        };
+      });
+    }
     handleCloseModal();
   };
 
@@ -81,7 +116,8 @@ function Board() {
             key={group.id} 
             group={group} 
             activities={activities}
-            onNewCardClick={() => handleOpenModal(group.id)}
+            onEditActivity={handleOpenEditModal}
+            onNewCardClick={() => handleOpenCreateModal(group.id)}
           />
         );
       })}
@@ -90,7 +126,8 @@ function Board() {
       {modalState.isOpen && (
         <ActivityModal
           onClose={handleCloseModal}
-          onSave={handleAddActivity}
+          onSave={handleSaveOrUpdateActivity}
+          initialData={modalState.activityData}
         />
       )}
     </div>

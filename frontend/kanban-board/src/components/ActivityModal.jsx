@@ -1,11 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 // Receber as props onClose e onSave
-function ActivityModal({ onClose, onSave }) {
+// Adicionar initialData para editar atividades
+function ActivityModal({ onClose, onSave, initialData = null }) {
     // Estado local para o campo de descrição
     const [description, setDescription] = useState("");
     // Adicionar data de entrega
     const [dueDate, setDueDate] = useState("");
+
+    const [isCompleted, setIsCompleted] = useState(false);
+
+    const isEditing = initialData !== null;
+
+    useEffect(() => {
+        if (isEditing) {
+            setDescription(initialData.description);
+            setDueDate(initialData.dueDate ? initialData.dueDate.split("T")[0] : "");
+            setIsCompleted(initialData.isCompleted);
+        }
+    }, [initialData, isEditing]);
 
     const handleSaveClick = () => {
         if (!description) {
@@ -13,13 +26,20 @@ function ActivityModal({ onClose, onSave }) {
             return;
         }
         
-        onSave({ description, dueDate });
+        const activityDataToSave = {
+            description,
+            dueDate: dueDate || null,
+            isCompleted,
+            id: isEditing ? initialData.id : undefined,
+        };
+
+        onSave(activityDataToSave);
     }
     return (
         // O fundo escuro (overlay) que fecha o modal ao clicar
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2>Adicionar Nova Atividade</h2>
+                <h2>{isEditing ? "Editar Atividade" : "Adicionar Nova Atividade"}</h2>
                 <label htmlFor="description">Descrição:</label>
                 <textarea 
                     id="description"
@@ -34,6 +54,17 @@ function ActivityModal({ onClose, onSave }) {
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                 />
+
+                <div className="modal-completion-checkbox">
+                    <input 
+                        id="isCompleted"
+                        type="checkbox"
+                        checked={isCompleted}
+                        onChange={(e) => setIsCompleted(e.target.checked)}
+                    />
+                    <label htmlFor="isCompleted">Concluído</label>
+                </div>
+                
                 <div className="modal-actions">
                     <button onClick={onClose} className="btn-cancel">Cancelar</button>
                     <button onClick={handleSaveClick} className="btn-save">Salvar</button>
