@@ -23,7 +23,7 @@ function NewGroupCreator({ onSave }) {
 
     if (isEditing) {
         return (
-            <div className="group group-column new-group-creator">
+            <div className="group-column new-group-creator">
                 <input
                     type="text"
                     className="group-title-input"
@@ -40,7 +40,7 @@ function NewGroupCreator({ onSave }) {
 
     return (
         <div 
-            className="group-column new-grouop-button"
+            className="new-group-box"
             onClick={() => setIsEditing(true)}
         >
             <span>+ Adicionar novo grupo</span>

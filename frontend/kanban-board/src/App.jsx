@@ -5,14 +5,20 @@ import Header from "./components/Header.jsx";
 
 function App() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [overdueCount, setOverdueCount] = useState(0);
 
   return (
     <div className="App">
-      <Header onSearchChange={setSearchTerm} />
+      <Header 
+        onSearchChange={setSearchTerm}
+        overdueCount={overdueCount}
+      />
       
       <main>
-        <h1>Kanban Board</h1>
-        <Board searchTerm={searchTerm} />
+        <Board 
+          searchTerm={searchTerm} 
+          onUpdateOverdueCount={setOverdueCount}
+        />
       </main>
     </div>
   );

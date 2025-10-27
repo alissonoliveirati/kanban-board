@@ -12,7 +12,7 @@ function GroupColumn({ group, activities, onNewCardClick, onEditActivity, onUpda
   });
 
   const style = {
-    backgroundColor: isOver ? "#cceeff" : "transparent",
+    backgroundColor: isOver ? "#00800033" : "transparent",
     transition: "background-color 0.2s ease",
   };
   
@@ -38,29 +38,31 @@ function GroupColumn({ group, activities, onNewCardClick, onEditActivity, onUpda
 
   return (
     <div className="group-column">
-      {isEditingTitle ? (
-        <input 
-          type="text"
-          className="group-title-input"
-          value={currentTitle}
-          onChange={(e) => setCurrentTitle(e.target.value)}
-          onBlur={handleTitleSave}
-          onKeyDown={handleTitleKeyDown}
-          autoFocus
-        />
-      ) : (
-        <h2 
-          className="group-title"
-          onClick={() => setIsEditingTitle(true)}
-        >
-          {group.title}
-        </h2>
-      )}
+      <div className="group-column-header">
+        {isEditingTitle ? (
+          <input 
+            type="text"
+            className="group-title-input"
+            value={currentTitle}
+            onChange={(e) => setCurrentTitle(e.target.value)}
+            onBlur={handleTitleSave}
+            onKeyDown={handleTitleKeyDown}
+            autoFocus
+          />
+        ) : (
+          <h2 
+            className="group-title"
+            onClick={() => setIsEditingTitle(true)}
+          >
+            {group.title}
+          </h2>
+        )}
+      </div>
 
       <div 
         ref={setNodeRef}
         style={style}
-        className="activity-list"
+        className="activities-container"
       >
         {activities.map((activity) => (
           <ActivityCard 

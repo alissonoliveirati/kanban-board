@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { initialData } from "../data/mockData.js";
 import GroupColumn from "./GroupColumn.jsx";
 import ActivityModal from "./ActivityModal.jsx";
@@ -8,13 +8,14 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  KeyboardSensor,
 } from "@dnd-kit/core";
 import NewGroupCreator from "./NewGroupCreator.jsx";
 import SearchBar from "./SearchBar.jsx";
 
 console.log(initialData); // Verifica se os dados estão sendo importados corretamente
 
-function Board({ searchTerm }) {
+function Board({ searchTerm = "", onUpdateOverdueCount }) {
   const [boardData, setBoardData] = useState(initialData);
 
   // Função para criar o estado do modal de atividade
@@ -47,7 +48,15 @@ function Board({ searchTerm }) {
   };
 
   // Função para configurar o sensor de arrastar e soltar
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 100,
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
   // Função adicionar novo grupo
   const handleAddNewGroup = (groupTitle) => {
@@ -215,6 +224,25 @@ function Board({ searchTerm }) {
     }
     handleCloseModal();
   };
+
+  // Atualiza a contagem de atividades atrasadas sempre que os dados do board mudam
+  useEffect(() => {
+    // Conta as atividades atrasadas
+    const allActivities = Object.values(boardData.activities);
+
+    //Calcula contagem de atividades atrasadas
+    let count = 0;
+    allActivities.forEach((activity) => {
+      if (activity && !activity.isCompleted && activity.dueDate) {
+        if (new Date(activity.dueDate) < new Date()) {
+          count++;
+        }
+      }
+    });
+
+    // Chama a função de callback para atualizar a contagem no componente pai
+    onUpdateOverdueCount(count);
+  }, [boardData, onUpdateOverdueCount]);
 
   return (
     <DndContext
