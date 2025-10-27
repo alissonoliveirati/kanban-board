@@ -10,10 +10,11 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import NewGroupCreator from "./NewGroupCreator.jsx";
+import SearchBar from "./SearchBar.jsx";
 
 console.log(initialData); // Verifica se os dados estão sendo importados corretamente
 
-function Board() {
+function Board({ searchTerm }) {
   const [boardData, setBoardData] = useState(initialData);
 
   // Função para criar o estado do modal de atividade
@@ -224,14 +225,20 @@ function Board() {
       <div className="board-container">
         {boardData.groupOrder.map((groupId) => {
           const group = boardData.groups[groupId];
-          const activities = group.activityIds.map(
+          const allGroupActivities = group.activityIds.map(
             (activityId) => boardData.activities[activityId]
           );
+          // Filtra as atividades com base no termo de busca
+          const filteredActivities = allGroupActivities.filter((activity) =>
+            activity &&
+            activity.description.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+
           return (
             <GroupColumn
               key={group.id}
               group={group}
-              activities={activities}
+              activities={filteredActivities}
               onEditActivity={handleOpenEditModal}
               onNewCardClick={() => handleOpenCreateModal(group.id)}
               onUpdateGroupTitle={handleUpdateGroupTitle}
