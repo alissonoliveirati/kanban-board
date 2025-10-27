@@ -176,3 +176,25 @@ main {
   width: 90%; /* Ajuste para caber no padding */
   box-sizing: border-box;
 }
+
+.new-group-button {
+  width: 270px;
+  min-width: 270px;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background-color: #ffffff3d; 
+  color: white; 
+  font-weight: 600;
+  cursor: pointer;
+  height: fit-content; 
+  transition: background-color 0.2s ease;
+}
+
+.new-group-button:hover {
+  background-color: #ffffff52; /* Mais claro no hover */
+}
+
+.new-group-creator {
+  padding-top: 0; 
+  padding-bottom: 0.5rem;
+}

@@ -2,7 +2,14 @@ import React, { useState } from "react";
 import { initialData } from "../data/mockData.js";
 import GroupColumn from "./GroupColumn.jsx";
 import ActivityModal from "./ActivityModal.jsx";
-import {closestCenter, DndContext, PointerSensor, useSensor, useSensors} from "@dnd-kit/core";
+import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import NewGroupCreator from "./NewGroupCreator.jsx";
 
 console.log(initialData); // Verifica se os dados estão sendo importados corretamente
 
@@ -17,6 +24,7 @@ function Board() {
     groupToAddTo: null,
   });
 
+  // Função para atualizar o título do grupo
   const handleUpdateGroupTitle = (groupId, newTitle) => {
     if (!newTitle) return;
 
@@ -38,97 +46,120 @@ function Board() {
   };
 
   // Função para configurar o sensor de arrastar e soltar
-  const sensors = useSensors(
-    useSensor(PointerSensor)
-  );
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  // Função adicionar novo grupo
+  const handleAddNewGroup = (groupTitle) => {
+    const newGroupId = `group-${Date.now()}`;
+
+    setBoardData((prevData) => {
+      const newGroup = {
+        id: newGroupId,
+        title: groupTitle,
+        activityIds: [],
+      };
+
+      const newGroups = {
+        ...prevData.groups,
+        [newGroupId]: newGroup,
+      };
+
+      const newGroupOrder = [...prevData.groupOrder, newGroupId];
+
+      return {
+        ...prevData,
+        groups: newGroups,
+        groupOrder: newGroupOrder,
+      };
+    });
+  };
 
   const handleDragEnd = (event) => {
-    const {active, over} = event;
+    const { active, over } = event;
     if (!over) {
       return;
     }
 
-  const activityId = active.id;
-  const targetGroupId = over.id;
+    const activityId = active.id;
+    const targetGroupId = over.id;
 
-  // Encontra o grupo atual da atividade
-  let sourceGroupId = null;
+    // Encontra o grupo atual da atividade
+    let sourceGroupId = null;
 
-  Object.values(boardData.groups).forEach((group) => {
-    if (group.activityIds.includes(activityId)) {
-      sourceGroupId = group.id;
+    Object.values(boardData.groups).forEach((group) => {
+      if (group.activityIds.includes(activityId)) {
+        sourceGroupId = group.id;
+      }
+    });
+
+    if (sourceGroupId === targetGroupId) {
+      return; // Não faz nada se a atividade for solta no mesmo grupo
     }
-  });
 
-  if (sourceGroupId === targetGroupId) {
-    return; // Não faz nada se a atividade for solta no mesmo grupo
-  }
+    // Atualiza o estado do board para mover a atividade entre grupos
+    setBoardData((prevData) => {
+      // Remove a atividade do grupo de origem
+      const sourceGroup = prevData.groups[sourceGroupId];
+      const newSourceActivityIds = sourceGroup.activityIds.filter(
+        (id) => id !== activityId
+      );
+      const updatedSourceGroup = {
+        ...sourceGroup,
+        activityIds: newSourceActivityIds,
+      };
 
-  // Atualiza o estado do board para mover a atividade entre grupos
-  setBoardData((prevData) => {
-    // Remove a atividade do grupo de origem
-    const sourceGroup = prevData.groups[sourceGroupId];
-    const newSourceActivityIds = sourceGroup.activityIds.filter(
-      (id) => id !== activityId
-    );
-    const updatedSourceGroup = {
-      ...sourceGroup,
-      activityIds: newSourceActivityIds,
-    };
+      // Adiciona a atividade ao grupo de destino
+      const targetGroup = prevData.groups[targetGroupId];
+      const newTargetActivityIds = [...targetGroup.activityIds, activityId];
+      const updatedTargetGroup = {
+        ...targetGroup,
+        activityIds: newTargetActivityIds,
+      };
 
-    // Adiciona a atividade ao grupo de destino
-    const targetGroup = prevData.groups[targetGroupId];
-    const newTargetActivityIds = [...targetGroup.activityIds, activityId];
-    const updatedTargetGroup = {
-      ...targetGroup,
-      activityIds: newTargetActivityIds,
-    };
-
-    // Retorna o novo estado do board com os grupos atualizados
-    return {
-      ...prevData,
-      groups: {
-        ...prevData.groups,
-        [sourceGroupId]: updatedSourceGroup,
-        [targetGroupId]: updatedTargetGroup,
-      },
-    };
-  });
-};
+      // Retorna o novo estado do board com os grupos atualizados
+      return {
+        ...prevData,
+        groups: {
+          ...prevData.groups,
+          [sourceGroupId]: updatedSourceGroup,
+          [targetGroupId]: updatedTargetGroup,
+        },
+      };
+    });
+  };
 
   // Função para abrir o modal de atividade
   const handleOpenCreateModal = (groupId) => {
-    setModalState({ 
+    setModalState({
       isOpen: true,
       mode: "create",
       activityData: null,
-      groupToAddTo: groupId 
+      groupToAddTo: groupId,
     });
   };
 
   // Função para editar uma atividade existente
   const handleOpenEditModal = (activity) => {
-    setModalState({ 
+    setModalState({
       isOpen: true,
       mode: "edit",
       activityData: activity,
-      groupToAddTo: null
+      groupToAddTo: null,
     });
   };
 
   // Função para fechar o modal de atividade
   const handleCloseModal = () => {
-    setModalState({ 
-      isOpen: false, 
-      mode: "create", 
+    setModalState({
+      isOpen: false,
+      mode: "create",
       activityData: null,
-      groupToAddTo: null 
+      groupToAddTo: null,
     });
   };
 
   // Função para adicionar uma nova atividade ao grupo
   const handleSaveOrUpdateActivity = (activityData) => {
-    
     if (modalState.mode === "create") {
       const newActivityId = `activity-${Date.now()}`;
       const groupId = modalState.groupToAddTo;
@@ -169,7 +200,7 @@ function Board() {
         };
       });
     } else if (modalState.mode === "edit") {
-      setBoardData(prevData => {
+      setBoardData((prevData) => {
         const activityId = activityData.id;
         const newActivities = {
           ...prevData.activities,
@@ -185,7 +216,7 @@ function Board() {
   };
 
   return (
-    <DndContext 
+    <DndContext
       sensors={sensors}
       onDragEnd={handleDragEnd}
       collisionDetection={closestCenter}
@@ -197,9 +228,9 @@ function Board() {
             (activityId) => boardData.activities[activityId]
           );
           return (
-            <GroupColumn 
-              key={group.id} 
-              group={group} 
+            <GroupColumn
+              key={group.id}
+              group={group}
               activities={activities}
               onEditActivity={handleOpenEditModal}
               onNewCardClick={() => handleOpenCreateModal(group.id)}
@@ -207,18 +238,20 @@ function Board() {
             />
           );
         })}
+
+        <NewGroupCreator onSave={handleAddNewGroup} />
+        
       </div>
 
-        {/* Renderiza o modal de atividade se estiver aberto */}
-        {modalState.isOpen && (
-          <ActivityModal
-            onClose={handleCloseModal}
-            onSave={handleSaveOrUpdateActivity}
-            initialData={modalState.activityData}
-          />
-        )}
-      </DndContext>
-      
+      {/* Renderiza o modal de atividade se estiver aberto */}
+      {modalState.isOpen && (
+        <ActivityModal
+          onClose={handleCloseModal}
+          onSave={handleSaveOrUpdateActivity}
+          initialData={modalState.activityData}
+        />
+      )}
+    </DndContext>
   );
 }
 
