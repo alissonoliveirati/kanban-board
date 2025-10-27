@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  kanban-backend
+  Backend serverless (API Gateway, Lambda, DynamoDB) para o app de Kanban.
+
+# Globals são configurações aplicadas a todas as funções
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.11 
+    MemorySize: 256
+    Environment:
+      Variables:
+        GROUPS_TABLE_NAME: !Ref GroupsTable
+        ACTIVITIES_TABLE_NAME: !Ref ActivitiesTable
+
+Resources:
+  # 1. A API Gateway que será o "portão" do backend
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      # CORS é CRÍTICO. Permite que o seu React (ex: localhost:5173)
+      # chame esta API.
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'" # '*' permite qualquer domínio (bom para dev)
+
+  # 2. A tabela DynamoDB para armazenar os Grupos (colunas)
+  GroupsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: KanbanGroups
+      PrimaryKey:
+        Name: groupId
+        Type: String
+      BillingMode: PAY_PER_REQUEST # Serverless (sem custo fixo)
+
+  # 3. A tabela DynamoDB para armazenar as Atividades (cards)
+  ActivitiesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: KanbanActivities
+      AttributeDefinitions:
+        - AttributeName: activityId
+          AttributeType: S
+        - AttributeName: groupId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: activityId
+          KeyType: HASH # Chave de Partição (PK)
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: GroupIdIndex
+          KeySchema:
+            - AttributeName: groupId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # 4. A ÚNICA Função Lambda que lida com toda a lógica
+  ApiHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      # Aponta para a pasta onde código Python estará
+      CodeUri: src/ 
+      # O arquivo é 'app.py' e a função é 'lambda_handler'
+      Handler: app.lambda_handler 
+      Events:
+        # Conecta esta Lambda à API Gateway
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            # {proxy+} é um "catch-all". Pega TUDO (ex: /groups, /activities/123)
+            Path: /{proxy+}
+            Method: ANY # Pega TUDO (GET, POST, PUT, DELETE...)
+      Policies:
+        # Dá permissão de CRUD (Criar, Ler, Atualizar, Deletar)
+        # para a nossa Lambda nas duas tabelas
+        - DynamoDBCrudPolicy:
+            TableName: !Ref GroupsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ActivitiesTable
+
+# Outputs nos diz a URL da API após o deploy
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
