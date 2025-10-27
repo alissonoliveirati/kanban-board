@@ -20,7 +20,7 @@ main {
 
 /* === HEADER (VERDE) === */
 .header-container {
-  background-color: #008000; /* SEU VERDE (mude se quiser) */
+  background-color: #008000; 
   color: white;
   padding: 0.75rem 1.5rem;
   display: flex;
@@ -85,12 +85,6 @@ main {
   /* Posicionamento */
   position: absolute;
   z-index: 1001; /* Ficar na frente de tudo */
-  
-  /* Posiciona o tooltip à ESQUERDA do sino.
-    'top: 0' alinha o topo do tooltip com o topo do sino.
-    'right: 100%' move o tooltip 100% para a esquerda.
-    'margin-right: 12px' dá o espaço para a "seta".
-  */
   top: 0;
   right: 100%; 
   margin-right: 12px; 
@@ -155,7 +149,7 @@ main {
 }
 
 .group-column-header {
-  background-color: #008000; /* SEU VERDE */
+  background-color: #008000; 
   padding: 0.75rem 1rem;
 }
 
@@ -194,7 +188,6 @@ main {
   padding: 0.75rem;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
   cursor: grab;
-  /* Removemos a borda esquerda para ficar mais limpo */
 }
 
 .activity-card:hover {
@@ -210,7 +203,7 @@ main {
   color: #5e6c84;
 }
 
-/* Estilos de Status (como no seu print, com borda) */
+/* Estilos de Status */
 .activity-card.card--completed {
   border-left: 5px solid #28a745; /* Verde */
   background-color: #f3fcf3;
@@ -219,6 +212,11 @@ main {
 .activity-card.card--overdue {
   border-left: 5px solid #dc3545; /* Vermelho */
   background-color: #fff8f8;
+}
+
+.activity-card.card--overdue .activity-date {
+  color: #dc3545; 
+  font-weight: 600; 
 }
 
 /* === BOTÕES (+ NOVO CARD / + NOVO GRUPO) === */
