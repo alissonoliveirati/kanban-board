@@ -8,7 +8,7 @@ function GroupColumn({ group, activities, onNewCardClick, onEditActivity, onUpda
   const [currentTitle, setCurrentTitle] = useState(group.title);
     
   const { isOver, setNodeRef } = useDroppable({
-    id: group.id,
+    id: group.groupId,
   });
 
   const style = {
@@ -20,7 +20,7 @@ function GroupColumn({ group, activities, onNewCardClick, onEditActivity, onUpda
   const handleTitleSave = () => {
     setIsEditingTitle(false);
     if (currentTitle.trim() && currentTitle !== group.title) {
-      onUpdateGroupTitle(group.id, currentTitle.trim());
+      onUpdateGroupTitle(group.groupId, currentTitle.trim());
     } else {
       setCurrentTitle(group.title); // Reverte para o título original se vazio
     }
@@ -29,6 +29,7 @@ function GroupColumn({ group, activities, onNewCardClick, onEditActivity, onUpda
   // Função para lidar com a tecla Enter ao editar o título
   const handleTitleKeyDown = (e) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       handleTitleSave();
     } else if (e.key === "Escape") {
       setIsEditingTitle(false);
@@ -66,7 +67,7 @@ function GroupColumn({ group, activities, onNewCardClick, onEditActivity, onUpda
       >
         {activities.map((activity) => (
           <ActivityCard 
-            key={activity.id} 
+            key={activity.activityId} 
             activity={activity}
             onClick={() => onEditActivity(activity)}
           />

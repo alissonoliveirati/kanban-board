@@ -31,6 +31,8 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
   const handleUpdateGroupTitle = (groupId, newTitle) => {
     if (!newTitle) return;
 
+    const originalGroups = boardData.groups;
+
     setBoardData((prevData) => {
       const group = prevData.groups[groupId];
       const updatedGroup = {
@@ -46,6 +48,47 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
         },
       };
     });
+
+    // Envia a atualização para a API
+    fetch(`${API_URL}groups/${groupId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title: newTitle }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((err) => {
+            throw new Error(err.error || "Erro ao atualizar grupo");
+          });
+        }
+        return response.json();
+      })
+      .then((updatedGroupFromServer) => {
+        console.log("Grupo atualizado com sucesso:", updatedGroupFromServer);
+        setBoardData((prevData) => ({
+          ...prevData,
+          groups: {
+            ...prevData.groups,
+            [groupId]: {
+              ...prevData.groups[groupId],
+              ...updatedGroupFromServer,
+            },
+          },
+        }));
+      })
+      .catch((error) => {
+        console.error("Erro ao atualizar grupo:", error);
+        alert(`Erro: ${error.message}. Revertendo título do grupo.`);
+        // Reverte para o título original em caso de erro
+        setBoardData((prevData) => {
+          return {
+            ...prevData,
+            groups: originalGroups,
+          };
+        });
+      });
   };
 
   // Função para configurar o sensor de arrastar e soltar
@@ -211,7 +254,7 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
 
   // Função para adicionar uma nova atividade ao grupo
   const handleSaveOrUpdateActivity = (activityData) => {
-    if (modalState.mode === "create") {
+    /* if (modalState.mode === "create") {
       const newActivityId = `activity-${Date.now()}`;
       const groupId = modalState.groupToAddTo;
 
@@ -262,8 +305,145 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
           activities: newActivities,
         };
       });
+    } */
+
+    if (modalState.mode === "create") {
+      const newActivityData = {
+        ...activityData,
+        groupId: modalState.groupToAddTo,
+      };
+
+      console.log("Salvando nova atividade:", newActivityData);
+
+      fetch(`${API_URL}activities`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newActivityData),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((err) => {
+              throw new Error(err.error || `Erro ao salvar atividade`);
+            });
+          }
+          return response.json();
+        })
+        .then((savedActivity) => {
+          console.log("Atividade salva com sucesso:", savedActivity);
+          setBoardData((prevData) => {
+            // Adiciona a nova atividade ao objeto de atividades
+            const newActivities = {
+              ...prevData.activities,
+              [savedActivity.activityId]: savedActivity,
+            };
+            // Adiciona o ID da nova atividade ao grupo correspondente
+            const group = prevData.groups[savedActivity.groupId];
+            if (!group) {
+              console.error(
+                "ERRO: Grupo inválido para o ID:",
+                savedActivity.groupId
+              );
+              return prevData; // Retorna o estado anterior sem alterações
+            }
+
+            const newActivityIds = [
+              ...group.activityIds,
+              savedActivity.activityId,
+            ];
+            const newGroup = {
+              ...group,
+              activityIds: newActivityIds,
+            };
+            const newGroups = {
+              ...prevData.groups,
+              [savedActivity.groupId]: newGroup,
+            };
+
+            return {
+              ...prevData,
+              activities: newActivities,
+              groups: newGroups,
+            };
+          });
+
+          handleCloseModal();
+        })
+        .catch((error) => {
+          console.error("Erro ao salvar atividade:", error);
+          alert(`Erro ao salvar atividade: ${error.message}`);
+        });
+    } else if (modalState.mode === "edit") {
+      const activityId = modalState.activityData.activityId;
+
+      console.log("Atualizando atividade:", activityId, activityData);
+
+      fetch(`${API_URL}activities/${activityId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          description: activityData.description,
+          dueDate: activityData.dueDate,
+          isCompleted: activityData.isCompleted,
+        }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((err) => {
+              throw new Error(err.error || `Erro ao atualizar atividade`);
+            });
+          }
+          return response.json();
+        })
+
+        .then((updatedActivity) => {
+          console.log("Atividade atualizada com sucesso:", updatedActivity);
+
+          setBoardData((prevData) => {
+            const newActivities = {
+              ...prevData.activities,
+              [activityId]: updatedActivity,
+            };
+
+            return {
+              ...prevData,
+              activities: newActivities,
+            };
+          });
+
+          handleCloseModal();
+        })
+        .catch((error) => {
+          console.error("Erro ao atualizar atividade:", error);
+          alert(`Erro ao atualizar atividade: ${error.message}`);
+        });
+
+      /* setBoardData((prevData) => {
+        const activityId = activityData.id || activityData.activityId;
+        const currentActivity = prevData.activities[activityId];
+        const updatedActivity = {
+          ...currentActivity,
+          ...activityData,
+          activityId: activityId,
+          id: undefined,
+        };
+
+        const newActivities = {
+          ...prevData.activities,
+          [activityId]: updatedActivity,
+        };
+
+        return {
+          ...prevData,
+          activities: newActivities,
+        };
+      });
+
+      handleCloseModal();*/
     }
-    handleCloseModal();
   };
 
   // Atualiza a contagem de atividades atrasadas sempre que os dados do board mudam
@@ -315,10 +495,10 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
             return null;
           }
 
-          const allGroupActivities = group.activityIds.map(
-            (activityId) => boardData.activities[activityId]
-          ).filter(Boolean); 
-          
+          const allGroupActivities = group.activityIds
+            .map((activityId) => boardData.activities[activityId])
+            .filter(Boolean);
+
           // Filtra as atividades com base no termo de busca
           const filteredActivities = allGroupActivities.filter(
             (activity) =>

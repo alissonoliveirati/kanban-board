@@ -57,11 +57,6 @@ def lambda_handler(event, context):
             group_id = path.split('/')[-1]
             response_body = update_group_title(group_id, body)
             return create_response(200, response_body)
-            
-        elif http_method == 'DELETE' and path.startswith('/groups/'):
-            group_id = path.split('/')[-1]
-            response_body = delete_group(group_id)
-            return create_response(200, response_body)
 
         elif http_method == 'POST' and path == '/activities':
             response_body = create_activity(body)
@@ -119,11 +114,6 @@ def get_board_data():
             key=lambda act_id: activities_map[act_id].get('createdAt', '')
         )
 
-    print("--- DEBUG get_board_data ---")
-    print("Groups Map (antes de retornar):", json.dumps(groups_map, cls=DecimalEncoder, indent=2))
-    print("Group Order (antes de retornar):", group_order)
-    print("--- FIM DEBUG ---")
-    
     return {
         "groups": groups_map,
         "activities": activities_map,
@@ -142,3 +132,80 @@ def create_group(body):
     }
     groups_table.put_item(Item=new_group)
     return new_group
+
+def update_group_title(group_id, body):
+    title = body.get('title')
+    if not title:
+        raise ValueError("O 'title' é obrigatório.")
+
+    response = groups_table.update_item(
+        Key={'groupId': group_id},
+        UpdateExpression="set title = :t",
+        ExpressionAttributeValues={':t': title},
+        ReturnValues="ALL_NEW" 
+    )
+    return response.get('Attributes')
+
+def create_activity(body): # <-- A FUNÇÃO QUE FALTAVA
+    group_id = body.get('groupId')
+    if not group_id:
+        raise ValueError("O 'groupId' é obrigatório para criar uma atividade.")
+
+    new_activity = {
+        'activityId': str(uuid.uuid4()),
+        'groupId': group_id,
+        'description': body.get('description', ''),
+        'dueDate': body.get('dueDate'), 
+        'isCompleted': body.get('isCompleted', False),
+        'createdAt': datetime.datetime.utcnow().isoformat() 
+    }
+    activities_table.put_item(Item=new_activity)
+    return new_activity # <-- Garanta que tem este return
+
+def update_activity(activity_id, body):
+    update_expression = "set "
+    expression_values = {}
+    
+    allowed_updates = body.copy()
+    allowed_updates.pop('id', None)
+    allowed_updates.pop('activityId', None)
+    allowed_updates.pop('groupId', None)
+    
+    if not allowed_updates:
+        raise ValueError("Nenhum campo válido para atualizar.")
+
+    for key, value in allowed_updates.items():
+        # Corrige para lidar com None (ou outros tipos não string/num)
+        if value is not None: 
+            update_expression += f" {key} = :{key},"
+            expression_values[f":{key}"] = value
+        else:
+             # Se o valor for None, usamos REMOVE
+             update_expression += f" REMOVE {key}," 
+
+    update_expression = update_expression.rstrip(',') 
+
+    response = activities_table.update_item(
+        Key={'activityId': activity_id},
+        UpdateExpression=update_expression,
+        ExpressionAttributeValues=expression_values if expression_values else None, # Evita erro se values for vazio
+        ReturnValues="ALL_NEW"
+    )
+    return response.get('Attributes')
+
+def move_activity(activity_id, body):
+    new_group_id = body.get('newGroupId')
+    if not new_group_id:
+        raise ValueError("O 'newGroupId' é obrigatório.")
+        
+    response = activities_table.update_item(
+        Key={'activityId': activity_id},
+        UpdateExpression="set groupId = :gid",
+        ExpressionAttributeValues={':gid': new_group_id},
+        ReturnValues="ALL_NEW"
+    )
+    return response.get('Attributes')
+
+def delete_activity(activity_id):
+    activities_table.delete_item(Key={'activityId': activity_id})
+    return {'message': 'Atividade deletada.'}
