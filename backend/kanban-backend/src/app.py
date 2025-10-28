@@ -163,7 +163,8 @@ def create_activity(body): # <-- A FUNÇÃO QUE FALTAVA
     return new_activity # <-- Garanta que tem este return
 
 def update_activity(activity_id, body):
-    update_expression = "set "
+    set_parts = []
+    remove_parts = []
     expression_values = {}
     
     allowed_updates = body.copy()
@@ -176,19 +177,24 @@ def update_activity(activity_id, body):
 
     for key, value in allowed_updates.items():
         # Corrige para lidar com None (ou outros tipos não string/num)
-        if value is not None: 
-            update_expression += f" {key} = :{key},"
+        if value is not None and value != '': 
+            set_parts.append(f"{key} = :{key}")
             expression_values[f":{key}"] = value
         else:
              # Se o valor for None, usamos REMOVE
-             update_expression += f" REMOVE {key}," 
+             remove_parts.append(key)
 
-    update_expression = update_expression.rstrip(',') 
-
+    update_expression = ""
+    if set_parts:
+        update_expression += "SET " + ", ".join(set_parts) 
+    if remove_parts:
+        update_expression += " REMOVE " + ", ".join(remove_parts)
+    final_expression_values = expression_values if expression_values else None
+    
     response = activities_table.update_item(
         Key={'activityId': activity_id},
-        UpdateExpression=update_expression,
-        ExpressionAttributeValues=expression_values if expression_values else None, # Evita erro se values for vazio
+        UpdateExpression=update_expression.strip(),
+        ExpressionAttributeValues=final_expression_values,
         ReturnValues="ALL_NEW"
     )
     return response.get('Attributes')
