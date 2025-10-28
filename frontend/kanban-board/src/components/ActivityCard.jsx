@@ -11,7 +11,7 @@ function ActivityCard({ activity, onClick }) {
         transform, 
         isDragging 
     } = useDraggable({
-        id: activity.id,
+        id: activity.activityId,
         data: { type: "activity" },
     });
 

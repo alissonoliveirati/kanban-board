@@ -180,15 +180,24 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
     // Encontra o grupo atual da atividade
     let sourceGroupId = null;
 
-    Object.values(boardData.groups).forEach((group) => {
+    for (const [groupId, group] of Object.entries(boardData.groups)) {
+      if (group.activityIds.includes(activityId)) {
+        sourceGroupId = groupId;
+        break;
+      }
+    }
+
+    /* Object.values(boardData.groups).forEach((group) => {
       if (group.activityIds.includes(activityId)) {
         sourceGroupId = group.id;
       }
-    });
+    }); */
 
-    if (sourceGroupId === targetGroupId) {
+    if (!sourceGroupId || sourceGroupId === targetGroupId) {
       return; // Não faz nada se a atividade for solta no mesmo grupo
     }
+
+    const originalGroups = boardData.groups;
 
     // Atualiza o estado do board para mover a atividade entre grupos
     setBoardData((prevData) => {
@@ -220,6 +229,39 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
         },
       };
     });
+
+    // Envia a atualização para a API
+    fetch(`${API_URL}activities/${activityId}/move`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        newGroupId: targetGroupId,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((err) => {
+            throw new Error(err.error || "Erro ao mover atividade");
+          });
+        }
+        return response.json();
+      })
+      .then((movedActivity) => {
+        console.log("Atividade movida com sucesso:", movedActivity);
+      })
+      .catch((error) => {
+        console.error("Erro ao mover atividade:", error);
+        alert(`Erro: ${error.message}. Revertendo movimento da atividade.`);
+        // Reverte para o estado original em caso de erro
+        setBoardData((prevData) => {
+          return {
+            ...prevData,
+            groups: originalGroups,
+          };
+        });
+      });
   };
 
   // Função para abrir o modal de atividade
