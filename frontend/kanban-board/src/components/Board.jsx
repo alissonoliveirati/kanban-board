@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { initialData } from "../data/mockData.js";
+// import { initialData } from "../data/mockData.js";
 import GroupColumn from "./GroupColumn.jsx";
 import ActivityModal from "./ActivityModal.jsx";
 import {
@@ -13,10 +13,11 @@ import {
 import NewGroupCreator from "./NewGroupCreator.jsx";
 import SearchBar from "./SearchBar.jsx";
 
-console.log(initialData); // Verifica se os dados estão sendo importados corretamente
+// console.log(initialData); // Verifica se os dados estão sendo importados corretamente
+const API_URL = "https://rmglcg24e6.execute-api.us-east-1.amazonaws.com/Prod/";
 
 function Board({ searchTerm = "", onUpdateOverdueCount }) {
-  const [boardData, setBoardData] = useState(initialData);
+  const [boardData, setBoardData] = useState(null);
 
   // Função para criar o estado do modal de atividade
   const [modalState, setModalState] = useState({
@@ -58,31 +59,71 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
     useSensor(KeyboardSensor)
   );
 
+  // Busca os dados iniciais do board da API ao montar o componente
+  useEffect(() => {
+    const fetchBoardData = () => {
+      console.log("Buscando dados da API...");
+      fetch(`${API_URL}/board`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Erro ao buscar dados do board");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Dados do board recebidos:", data);
+          setBoardData(data);
+        })
+        .catch((error) => {
+          console.error("Erro ao buscar dados do board:", error);
+        });
+    };
+
+    fetchBoardData();
+  }, []);
+
   // Função adicionar novo grupo
   const handleAddNewGroup = (groupTitle) => {
-    const newGroupId = `group-${Date.now()}`;
+    const newGroupData = {
+      title: groupTitle,
+    };
 
-    setBoardData((prevData) => {
-      const newGroup = {
-        id: newGroupId,
-        title: groupTitle,
-        activityIds: [],
-      };
+    fetch(`${API_URL}groups`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newGroupData),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Erro ao adicionar novo grupo");
+        }
+        return response.json();
+      })
+      .then((savedGroup) => {
+        console.log("Novo grupo adicionado:", savedGroup);
+        setBoardData((prevData) => {
+          const newGroups = {
+            ...prevData.groups,
+            [savedGroup.groupId]: { ...savedGroup, activityIds: [] },
+          };
 
-      const newGroups = {
-        ...prevData.groups,
-        [newGroupId]: newGroup,
-      };
+          const newGroupOrder = [...prevData.groupOrder, savedGroup.groupId];
 
-      const newGroupOrder = [...prevData.groupOrder, newGroupId];
-
-      return {
-        ...prevData,
-        groups: newGroups,
-        groupOrder: newGroupOrder,
-      };
-    });
+          return {
+            ...prevData,
+            groups: newGroups,
+            groupOrder: newGroupOrder,
+          };
+        });
+      })
+      .catch((error) => {
+        console.error("Erro ao adicionar novo grupo:", error);
+      });
   };
+
+  // Função para lidar com o fim do arrastar e soltar
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -227,6 +268,10 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
 
   // Atualiza a contagem de atividades atrasadas sempre que os dados do board mudam
   useEffect(() => {
+    if (!boardData) {
+      onUpdateOverdueCount(0);
+      return;
+    }
     // Conta as atividades atrasadas
     const allActivities = Object.values(boardData.activities);
 
@@ -244,6 +289,17 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
     onUpdateOverdueCount(count);
   }, [boardData, onUpdateOverdueCount]);
 
+  if (!boardData) {
+    return (
+      <div className="loading-container" style={{ padding: "2rem" }}>
+        <h1>Carregando seu quadro...</h1>
+        <p>
+          Se demorar muito, verifique o console do navegador e o terminal do SAM
+        </p>
+      </div>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -253,29 +309,38 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
       <div className="board-container">
         {boardData.groupOrder.map((groupId) => {
           const group = boardData.groups[groupId];
+
+          if (!group) {
+            console.error(`ERRO: Grupo inválido para o ID: ${groupId}`);
+            return null;
+          }
+
           const allGroupActivities = group.activityIds.map(
             (activityId) => boardData.activities[activityId]
-          );
+          ).filter(Boolean); 
+          
           // Filtra as atividades com base no termo de busca
-          const filteredActivities = allGroupActivities.filter((activity) =>
-            activity &&
-            activity.description.toLowerCase().includes(searchTerm.toLowerCase())
+          const filteredActivities = allGroupActivities.filter(
+            (activity) =>
+              activity &&
+              activity.description
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase())
           );
 
           return (
             <GroupColumn
-              key={group.id}
+              key={groupId}
               group={group}
               activities={filteredActivities}
               onEditActivity={handleOpenEditModal}
-              onNewCardClick={() => handleOpenCreateModal(group.id)}
+              onNewCardClick={() => handleOpenCreateModal(groupId)}
               onUpdateGroupTitle={handleUpdateGroupTitle}
             />
           );
         })}
 
         <NewGroupCreator onSave={handleAddNewGroup} />
-        
       </div>
 
       {/* Renderiza o modal de atividade se estiver aberto */}

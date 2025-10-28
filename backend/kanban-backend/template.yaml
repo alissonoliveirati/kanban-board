@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   kanban-backend
@@ -8,7 +8,7 @@ Description: >
 Globals:
   Function:
     Timeout: 30
-    Runtime: python3.11 
+    Runtime: python3.11
     MemorySize: 256
     Environment:
       Variables:
@@ -36,7 +36,6 @@ Resources:
       PrimaryKey:
         Name: groupId
         Type: String
-      BillingMode: PAY_PER_REQUEST # Serverless (sem custo fixo)
 
   # 3. A tabela DynamoDB para armazenar as Atividades (cards)
   ActivitiesTable:
@@ -65,9 +64,9 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       # Aponta para a pasta onde código Python estará
-      CodeUri: src/ 
+      CodeUri: src/
       # O arquivo é 'app.py' e a função é 'lambda_handler'
-      Handler: app.lambda_handler 
+      Handler: app.lambda_handler
       Events:
         # Conecta esta Lambda à API Gateway
         ApiEvent:
