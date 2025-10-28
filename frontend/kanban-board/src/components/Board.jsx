@@ -254,59 +254,6 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
 
   // Função para adicionar uma nova atividade ao grupo
   const handleSaveOrUpdateActivity = (activityData) => {
-    /* if (modalState.mode === "create") {
-      const newActivityId = `activity-${Date.now()}`;
-      const groupId = modalState.groupToAddTo;
-
-      // Cria a nova atividade
-      const newActivity = {
-        ...activityData,
-        id: newActivityId,
-        isCompleted: activityData.isCompleted || false,
-      };
-
-      // Atualiza o estado do board com a nova atividade
-      setBoardData((prevData) => {
-        // Adiciona a nova atividade ao objeto de atividades
-        const newActivities = {
-          ...prevData.activities,
-          [newActivityId]: newActivity,
-        };
-
-        // Adiciona o ID da nova atividade ao grupo correspondente
-        const group = prevData.groups[groupId];
-        const newActivityIds = [...group.activityIds, newActivityId];
-        const newGroup = {
-          ...group,
-          activityIds: newActivityIds,
-        };
-
-        const newGroups = {
-          ...prevData.groups,
-          [groupId]: newGroup,
-        };
-
-        // Retorna o novo estado do board
-        return {
-          ...prevData,
-          activities: newActivities,
-          groups: newGroups,
-        };
-      });
-    } else if (modalState.mode === "edit") {
-      setBoardData((prevData) => {
-        const activityId = activityData.id;
-        const newActivities = {
-          ...prevData.activities,
-          [activityId]: activityData,
-        };
-        return {
-          ...prevData,
-          activities: newActivities,
-        };
-      });
-    } */
-
     if (modalState.mode === "create") {
       const newActivityData = {
         ...activityData,
@@ -420,29 +367,6 @@ function Board({ searchTerm = "", onUpdateOverdueCount }) {
           console.error("Erro ao atualizar atividade:", error);
           alert(`Erro ao atualizar atividade: ${error.message}`);
         });
-
-      /* setBoardData((prevData) => {
-        const activityId = activityData.id || activityData.activityId;
-        const currentActivity = prevData.activities[activityId];
-        const updatedActivity = {
-          ...currentActivity,
-          ...activityData,
-          activityId: activityId,
-          id: undefined,
-        };
-
-        const newActivities = {
-          ...prevData.activities,
-          [activityId]: updatedActivity,
-        };
-
-        return {
-          ...prevData,
-          activities: newActivities,
-        };
-      });
-
-      handleCloseModal();*/
     }
   };
 
